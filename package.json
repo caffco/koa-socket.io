@@ -35,7 +35,7 @@
     "websocket",
     "web socket"
   ],
-  "repository": "caff/koa-socket.io",
+  "repository": "caffco/koa-socket.io",
   "author": "Lluís Ulzurrun de Asanza i Sàez (Originally: Aaron Belovsky and Matt Styles)",
   "license": "MIT",
   "husky": {
