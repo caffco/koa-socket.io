@@ -16,6 +16,7 @@
     "format-check": "prettier --check **/*.ts",
     "lint": "eslint .",
     "test": "jest",
+    "prepublish": "run-s format lint test build",
     "example": "ts-node example/server"
   },
   "keywords": [
