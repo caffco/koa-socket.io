@@ -1,5 +1,11 @@
 ## 3.0.0
 
+## 3.0.1
+
+### Patch Changes
+
+- Ensure published code is the latest build available
+
 ### Major Changes
 
 - fd67770: Codebase ported to TypeScript
