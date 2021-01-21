@@ -15,8 +15,8 @@
     "format": "prettier --write **/*.ts",
     "format-check": "prettier --check **/*.ts",
     "lint": "eslint .",
-    "test": "jest",
-    "prepublish": "run-s format lint test build",
+    "test": "jest $JEST_ARGS",
+    "prepublish": "JEST_ARGS=--forceExit run-s format lint test build",
     "example": "ts-node example/server"
   },
   "keywords": [
