@@ -1,5 +1,11 @@
 ## 3.0.0
 
+## 3.0.2
+
+### Patch Changes
+
+- Sourcemaps will no longer be published
+
 ## 3.0.1
 
 ### Patch Changes
