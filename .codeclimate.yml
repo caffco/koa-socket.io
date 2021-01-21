@@ -1,0 +1,9 @@
+version: '2'
+exclude_patterns:
+  - '**/coverage/'
+  - '**/dist/'
+  - '**/node_modules/'
+  - '**/example/'
+  - '**/*.test.ts'
+  - '**/jest.config.js'
+  - '**/yarn.lock'

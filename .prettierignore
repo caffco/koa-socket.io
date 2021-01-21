@@ -1,5 +1,5 @@
+.prettierignore
 coverage
 dist
 node_modules
-*.log
-*.tsbuildinfo
+yarn.lock
