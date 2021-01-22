@@ -48,6 +48,7 @@ export interface BaseEventHandlerContext {
   event: string;
   data: unknown;
   socket: Socket;
+  acknowledge: (data?: unknown) => void;
 }
 
 export type EventHandler<Context extends Record<string, unknown>> = (
@@ -76,11 +77,11 @@ export class IO<
    * List of middlewares, these are composed into an execution chain and
    * evaluated with each event
    */
-  middleware: Array<compose.Middleware<ContextT>>;
+  middleware: Array<compose.Middleware<EnhancedKoaContext<StateT, ContextT>>>;
   /**
    * Composed middleware stack
    */
-  composed: compose.ComposedMiddleware<ContextT> | null;
+  composed: compose.ComposedMiddleware<EnhancedKoaContext<StateT, ContextT>> | null;
   /**
    * All of the listeners currently added to the IO instance
    * event:callback
@@ -248,7 +249,7 @@ export class IO<
    * Pushes a middleware on to the stack
    * @param fn the middleware function to execute
    */
-  use(fn: compose.Middleware<ContextT>): ThisType<ContextT> {
+  use(fn: compose.Middleware<EnhancedKoaContext<StateT, ContextT>>): ThisType<ContextT> {
     this.middleware.push(fn);
     this.composed = compose(this.middleware);
 
@@ -354,12 +355,12 @@ export class IO<
   ): (event: string, handler: EventHandler<ContextT>) => Socket {
     return (event, handler) =>
       socket.on(event, (data, cb) => {
-        const packet = ({
+        const packet = {
           event,
           data,
           socket,
           acknowledge: cb,
-        } as unknown) as BaseEventHandlerContext & ContextT;
+        } as EnhancedKoaContext<StateT, BaseEventHandlerContext & ContextT>;
 
         const handleEvent = () => handler(packet, data);
 

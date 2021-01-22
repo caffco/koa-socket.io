@@ -5,13 +5,14 @@ import Koa from 'koa';
 
 import { IO } from '../src';
 
-interface KoaContext extends Koa.DefaultContext {
-  teststring?: string;
-  id?: string;
-}
-
 const app = new Koa();
-const io = new IO<Koa.DefaultState, KoaContext>();
+const io = new IO<
+  Koa.DefaultState,
+  {
+    teststring?: string;
+    id?: string;
+  }
+>();
 const chat = new IO('chat');
 
 io.attach(app);
@@ -54,7 +55,7 @@ io.use(async (ctx, next) => {
 /**
  * Socket handlers
  */
-io.on('connection', async (ctx: KoaContext) => {
+io.on('connection', async (ctx) => {
   console.log('Join event', ctx.id);
   io.broadcast('connections', {
     numConnections: io.connections.size,
@@ -68,7 +69,7 @@ io.on('connection', async (ctx: KoaContext) => {
   });
 });
 
-io.on('data', async (ctx: KoaContext, data) => {
+io.on('data', async (ctx, data) => {
   console.log('data event', data);
   console.log('ctx:', ctx.event, ctx.data, ctx.id);
   console.log('ctx.teststring:', ctx.teststring);
@@ -89,7 +90,7 @@ io.on('numConnections', async (packet) => {
 /**
  * Chat handlers
  */
-chat.on('connection', async (ctx: KoaContext) => {
+chat.on('connection', async (ctx) => {
   console.log('Joining chat namespace', ctx.id);
 });
 
