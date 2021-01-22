@@ -1,5 +1,11 @@
 ## 3.0.0
 
+## 3.1.4
+
+### Patch Changes
+
+- Fix return type of chainable functions like use, on and off
+
 ## 3.1.3
 
 ### Patch Changes
