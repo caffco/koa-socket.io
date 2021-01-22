@@ -1,5 +1,3 @@
-'use strict';
-
 import { createServer as createHttpsServer } from 'https';
 import { createServer as createHttpServer } from 'http';
 
@@ -24,16 +22,19 @@ export interface Options {
    */
   ioOptions: Partial<ServerOptions>;
 }
-
-export type EnhancedKoa<StateT = Koa.DefaultState, ContextT = Koa.DefaultContext> = Koa<
+export class EnhancedKoa<StateT = Koa.DefaultState, ContextT = Koa.DefaultContext> extends Koa<
   StateT,
   ContextT
-> &
-  Record<string, IO<StateT, ContextT> | undefined> & {
-    server?: ReturnType<typeof createHttpServer> | ReturnType<typeof createHttpServer>;
-    _io?: SocketIOServer;
-    io?: IO<StateT, ContextT>;
-  };
+> {
+  server?: ReturnType<typeof createHttpServer> | ReturnType<typeof createHttpServer>;
+  _io?: SocketIOServer;
+  io?: IO<StateT, ContextT>;
+}
+
+export type EnhancedKoaInstance<
+  StateT = Koa.DefaultState,
+  ContextT = Koa.DefaultContext
+> = EnhancedKoa<StateT, ContextT> & Record<string, IO<StateT, ContextT> | undefined>;
 
 export type GenericEventHandler<Context> = (
   ctx: Context,
@@ -180,7 +181,7 @@ export class IO<StateT = Koa.DefaultState, ContextT = Koa.DefaultContext> {
     https = false,
     opts: Parameters<typeof createHttpsServer>[0] = {},
   ): void {
-    const enhancedApp = app as EnhancedKoa<StateT, ContextT>;
+    const enhancedApp = app as EnhancedKoaInstance<StateT, ContextT>;
 
     this.createServerIfNeeded(app, https, opts);
 
@@ -220,7 +221,7 @@ export class IO<StateT = Koa.DefaultState, ContextT = Koa.DefaultContext> {
    * @param app the koa app to use
    * @param id namespace identifier
    */
-  attachNamespace(app: EnhancedKoa<StateT, ContextT>, id: string): void {
+  attachNamespace(app: EnhancedKoaInstance<StateT, ContextT>, id: string): void {
     if (!app._io) {
       throw new Error('Namespaces can only be attached once a socketIO instance has been attached');
     }
