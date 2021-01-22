@@ -1,5 +1,11 @@
 ## 3.0.0
 
+## 3.1.1
+
+### Patch Changes
+
+- Export EnhancedKoaContext and fix type definitions for Koa context
+
 ## 3.1.0
 
 ### Minor Changes
