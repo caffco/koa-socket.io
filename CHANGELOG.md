@@ -1,5 +1,11 @@
 ## 3.0.0
 
+## 3.1.2
+
+### Patch Changes
+
+- Improve type information
+
 ## 3.1.1
 
 ### Patch Changes
