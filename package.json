@@ -18,7 +18,7 @@
     "format-check": "prettier --check **/*.ts",
     "lint": "eslint .",
     "test": "jest $JEST_ARGS",
-    "prepublish": "JEST_ARGS=--forceExit run-s format lint test build",
+    "prepublishOnly": "JEST_ARGS=--forceExit run-s format lint test build",
     "example": "ts-node example/server"
   },
   "keywords": [
