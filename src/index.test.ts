@@ -125,7 +125,7 @@ describe('IO', () => {
     it('should add socket.io to Koa app', () => {
       const app = new Koa();
       const socket = new IO();
-      socket.attach(app);
+      expect(socket.attach(app)).toEqual(expect.any(SocketIOServer));
 
       expect(((app as unknown) as EnhancedKoa).io).toEqual(expect.any(IO));
       expect(((app as unknown) as EnhancedKoa).server).toBeTruthy();
@@ -148,7 +148,7 @@ describe('IO', () => {
       const app = new Koa();
       const socket = new IO();
       ((app as unknown) as EnhancedKoa).server = createServer();
-      socket.attach(app);
+      expect(socket.attach(app)).toEqual(expect.any(SocketIOServer));
 
       expect(((app as unknown) as EnhancedKoa).io).toEqual(expect.any(IO));
 
@@ -170,8 +170,8 @@ describe('IO', () => {
       const socket = new IO();
       const chat = new IO('chat');
 
-      socket.attach(app);
-      chat.attach(app);
+      expect(socket.attach(app)).toEqual(expect.any(SocketIOServer));
+      expect(chat.attach(app)).toHaveProperty('constructor.name', 'Namespace');
 
       expect(((app as unknown) as { chat: unknown }).chat).toEqual(chat);
     });
@@ -180,7 +180,7 @@ describe('IO', () => {
       const app = new Koa();
       const chat = new IO('chat');
 
-      chat.attach(app);
+      expect(chat.attach(app)).toHaveProperty('constructor.name', 'Namespace');
 
       expect(((app as unknown) as EnhancedKoa)._io).toEqual(expect.any(SocketIOServer));
       expect(((app as unknown) as { chat: unknown }).chat).toEqual(chat);
@@ -194,14 +194,14 @@ describe('IO', () => {
       const io = new SocketIOServer(server);
       ((app as unknown) as EnhancedKoa)._io = io;
 
-      chat.attach(app);
+      expect(chat.attach(app)).toHaveProperty('constructor.name', 'Namespace');
     });
 
     it('should allow attaching a namespace should be done via an options object', () => {
       const app = new Koa();
       const chat = new IO({ namespace: 'chat' });
 
-      chat.attach(app);
+      expect(chat.attach(app)).toHaveProperty('constructor.name', 'Namespace');
 
       expect(((app as unknown) as { chat: unknown }).chat).toEqual(chat);
     });
@@ -211,7 +211,7 @@ describe('IO', () => {
       const app = new Koa();
       const chat = new IO({ namespace: 'chat', hidden: true });
 
-      chat.attach(app);
+      expect(chat.attach(app)).toHaveProperty('constructor.name', 'Namespace');
 
       const server = ((app as unknown) as EnhancedKoa).server?.listen();
       const address = server.address() as AddressInfo;
@@ -245,7 +245,7 @@ describe('IO', () => {
       const app = new Koa();
       const socket = new IO();
 
-      socket.attach(app);
+      expect(socket.attach(app)).toEqual(expect.any(SocketIOServer));
 
       const spy = jest.fn();
       ((app as unknown) as EnhancedKoa).server.listen = spy;

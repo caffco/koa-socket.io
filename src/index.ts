@@ -185,7 +185,7 @@ export class IO<
     app: Koa<StateT, ContextT>,
     https = false,
     opts: Parameters<typeof createHttpsServer>[0] = {},
-  ): void {
+  ): SocketIOServer | Namespace {
     const enhancedApp = (app as unknown) as EnhancedKoaInstance<StateT, ContextT>;
 
     this.createServerIfNeeded(app, https, opts);
@@ -197,8 +197,7 @@ export class IO<
         throw new Error('Socket failed to initialise::Instance may already exist');
       }
 
-      this.attachNamespace(enhancedApp, this.opts.namespace);
-      return;
+      return this.attachNamespace(enhancedApp, this.opts.namespace);
     }
 
     this.ensureDefaultNamespaceIsNotHidden();
@@ -206,8 +205,7 @@ export class IO<
     enhancedApp._io = new SocketIOServer(enhancedApp.server, this.opts.ioOptions);
 
     if (this.opts.namespace) {
-      this.attachNamespace(enhancedApp, this.opts.namespace);
-      return;
+      return this.attachNamespace(enhancedApp, this.opts.namespace);
     }
 
     // Local aliases / passthrough socket.io functionality
@@ -219,6 +217,8 @@ export class IO<
     // If there is no namespace then connect using the default
     this.socket = enhancedApp._io;
     this.socket.on('connection', this.onConnection);
+
+    return enhancedApp._io;
   }
 
   /**
@@ -226,16 +226,17 @@ export class IO<
    * @param app the koa app to use
    * @param id namespace identifier
    */
-  attachNamespace(app: EnhancedKoaInstance<StateT, ContextT>, id: string): void {
+  attachNamespace(app: EnhancedKoaInstance<StateT, ContextT>, id: string): Namespace {
     if (!app._io) {
       throw new Error('Namespaces can only be attached once a socketIO instance has been attached');
     }
 
-    this.socket = app._io.of(id);
+    const namespace = app._io.of(id);
+    this.socket = namespace;
     this.socket.on('connection', this.onConnection);
 
     if (this.opts.hidden) {
-      return;
+      return namespace;
     }
 
     if (app[id]) {
@@ -243,6 +244,8 @@ export class IO<
     }
 
     app[id] = this;
+
+    return namespace;
   }
 
   /**
