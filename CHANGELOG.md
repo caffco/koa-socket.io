@@ -1,5 +1,11 @@
 ## 3.0.0
 
+## 3.1.3
+
+### Patch Changes
+
+- Improve type information of event handler contexts
+
 ## 3.1.2
 
 ### Patch Changes
