@@ -22,9 +22,17 @@ export interface Options {
    */
   ioOptions: Partial<ServerOptions>;
 }
+
+export type EnhancedKoaContext<StateT, BaseKoaContext> = Koa.ParameterizedContext<
+  StateT,
+  BaseKoaContext & {
+    socket: Socket;
+  }
+>;
+
 export class EnhancedKoa<StateT = Koa.DefaultState, ContextT = Koa.DefaultContext> extends Koa<
   StateT,
-  ContextT
+  EnhancedKoaContext<StateT, ContextT>
 > {
   server?: ReturnType<typeof createHttpServer> | ReturnType<typeof createHttpServer>;
   _io?: SocketIOServer;
@@ -72,11 +80,11 @@ export class IO<StateT = Koa.DefaultState, ContextT = Koa.DefaultContext> {
    * List of middlewares, these are composed into an execution chain and
    * evaluated with each event
    */
-  middleware: Array<compose.Middleware<ContextT>>;
+  middleware: Array<compose.Middleware<EnhancedKoaContext<StateT, ContextT>>>;
   /**
    * Composed middleware stack
    */
-  composed: compose.ComposedMiddleware<ContextT> | null;
+  composed: compose.ComposedMiddleware<EnhancedKoaContext<StateT, ContextT>> | null;
   /**
    * All of the listeners currently added to the IO instance
    * event:callback
@@ -138,7 +146,7 @@ export class IO<StateT = Koa.DefaultState, ContextT = Koa.DefaultContext> {
     https: boolean,
     opts: Parameters<typeof createHttpsServer>[0],
   ) {
-    const enhancedApp = app as EnhancedKoa<StateT, ContextT>;
+    const enhancedApp = (app as unknown) as EnhancedKoa<StateT, ContextT>;
 
     if (enhancedApp.server) {
       if (enhancedApp.server.constructor.name !== 'Server') {
@@ -181,7 +189,7 @@ export class IO<StateT = Koa.DefaultState, ContextT = Koa.DefaultContext> {
     https = false,
     opts: Parameters<typeof createHttpsServer>[0] = {},
   ): void {
-    const enhancedApp = app as EnhancedKoaInstance<StateT, ContextT>;
+    const enhancedApp = (app as unknown) as EnhancedKoaInstance<StateT, ContextT>;
 
     this.createServerIfNeeded(app, https, opts);
 
@@ -244,7 +252,7 @@ export class IO<StateT = Koa.DefaultState, ContextT = Koa.DefaultContext> {
    * Pushes a middleware on to the stack
    * @param fn the middleware function to execute
    */
-  use(fn: compose.Middleware<ContextT>): ThisType<ContextT> {
+  use(fn: compose.Middleware<EnhancedKoaContext<StateT, ContextT>>): ThisType<ContextT> {
     this.middleware.push(fn);
     this.composed = compose(this.middleware);
 
@@ -351,7 +359,7 @@ export class IO<StateT = Koa.DefaultState, ContextT = Koa.DefaultContext> {
 
         const { composed } = this;
         const handleMiddlewareChain = composed
-          ? () => composed((packet as unknown) as ContextT, handleEvent)
+          ? () => composed((packet as unknown) as EnhancedKoaContext<StateT, ContextT>, handleEvent)
           : handleEvent;
 
         handleMiddlewareChain();
