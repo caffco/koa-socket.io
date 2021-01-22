@@ -30,73 +30,69 @@ export type EnhancedKoaContext<StateT, BaseKoaContext> = Koa.ParameterizedContex
   }
 >;
 
-export class EnhancedKoa<StateT = Koa.DefaultState, ContextT = Koa.DefaultContext> extends Koa<
-  StateT,
-  EnhancedKoaContext<StateT, ContextT>
-> {
+export class EnhancedKoa<
+  StateT extends Record<string, unknown> = Koa.DefaultContext,
+  ContextT extends Record<string, unknown> = Koa.DefaultContext
+> extends Koa<StateT, EnhancedKoaContext<StateT, ContextT>> {
   server?: ReturnType<typeof createHttpServer> | ReturnType<typeof createHttpServer>;
   _io?: SocketIOServer;
   io?: IO<StateT, ContextT>;
 }
 
 export type EnhancedKoaInstance<
-  StateT = Koa.DefaultState,
-  ContextT = Koa.DefaultContext
+  StateT extends Record<string, unknown>,
+  ContextT extends Record<string, unknown>
 > = EnhancedKoa<StateT, ContextT> & Record<string, IO<StateT, ContextT> | undefined>;
 
-export type GenericEventHandler<Context> = (
-  ctx: Context,
+export interface BaseEventHandlerContext {
+  event: string;
+  data: unknown;
+  socket: Socket;
+}
+
+export type EventHandler<Context extends Record<string, unknown>> = (
+  ctx: BaseEventHandlerContext & Context,
   ...rest: Array<unknown>
 ) => Promise<unknown>;
 
-export type EventHandler<
-  Context extends { socket: Socket } = { socket: Socket }
-> = GenericEventHandler<Context>;
-export type SocketEventHandler<
-  Context extends { socket: Socket; disconnect: () => void } = {
-    data: unknown;
-    event: string;
-    socket: Socket;
-    acknowledge: (...response: Array<unknown>) => void;
-    disconnect: () => void;
-  }
-> = EventHandler<Context>;
-
-export interface EnhancedSocket extends Socket {
+export interface EnhancedSocket<ContextT extends Record<string, unknown>> extends Socket {
   /**
    * Registers the new list of listeners and middleware composition
    * @param listeners map of events and callbacks
    * @param middleware > the composed middleware
    */
-  update: (listeners: Map<string, Array<EventHandler>>) => void;
+  update: (listeners: Map<string, Array<EventHandler<ContextT>>>) => void;
 }
 
 /**
  * Main IO class that handles the socket.io connections
  * @class
  */
-export class IO<StateT = Koa.DefaultState, ContextT = Koa.DefaultContext> {
+export class IO<
+  StateT extends Record<string, unknown> = Koa.DefaultState,
+  ContextT extends Record<string, unknown> = Koa.DefaultContext
+> {
   /**
    * List of middlewares, these are composed into an execution chain and
    * evaluated with each event
    */
-  middleware: Array<compose.Middleware<EnhancedKoaContext<StateT, ContextT>>>;
+  middleware: Array<compose.Middleware<ContextT>>;
   /**
    * Composed middleware stack
    */
-  composed: compose.ComposedMiddleware<EnhancedKoaContext<StateT, ContextT>> | null;
+  composed: compose.ComposedMiddleware<ContextT> | null;
   /**
    * All of the listeners currently added to the IO instance
    * event:callback
    * @type <Map>
    */
-  listeners: Map<string, Array<EventHandler>>;
+  listeners: Map<string, Array<EventHandler<ContextT>>>;
   /**
    * All active connections
    * id:Socket
    * @type <Map>
    */
-  connections: Map<string, EnhancedSocket>;
+  connections: Map<string, EnhancedSocket<ContextT>>;
   /**
    * Holds the socketIO connection
    * @type <Socket.IO>
@@ -252,7 +248,7 @@ export class IO<StateT = Koa.DefaultState, ContextT = Koa.DefaultContext> {
    * Pushes a middleware on to the stack
    * @param fn the middleware function to execute
    */
-  use(fn: compose.Middleware<EnhancedKoaContext<StateT, ContextT>>): ThisType<ContextT> {
+  use(fn: compose.Middleware<ContextT>): ThisType<ContextT> {
     this.middleware.push(fn);
     this.composed = compose(this.middleware);
 
@@ -267,7 +263,15 @@ export class IO<StateT = Koa.DefaultState, ContextT = Koa.DefaultContext> {
    * @param handler the callback to execute
    * @return this
    */
-  on(event: string, handler: SocketEventHandler): ThisType<ContextT> {
+  on(
+    event: 'connect' | 'connection',
+    handler: (socket: Socket) => Promise<void>,
+  ): ThisType<ContextT>;
+  on(event: string, handler: EventHandler<ContextT>): ThisType<ContextT>;
+  on(
+    event: string,
+    handler: EventHandler<ContextT> | ((socket: Socket) => Promise<void>),
+  ): ThisType<ContextT> {
     if (['connect', 'connection'].includes(event)) {
       if (!this.socket) {
         throw new Error(
@@ -283,12 +287,12 @@ export class IO<StateT = Koa.DefaultState, ContextT = Koa.DefaultContext> {
 
     // If this is a new event then just set it
     if (!listeners) {
-      this.listeners.set(event, [handler as EventHandler]);
+      this.listeners.set(event, [handler as EventHandler<ContextT>]);
       this.updateConnections();
       return this;
     }
 
-    listeners.push(handler as EventHandler);
+    listeners.push(handler as EventHandler<ContextT>);
     this.listeners.set(event, listeners);
     this.updateConnections();
 
@@ -300,7 +304,7 @@ export class IO<StateT = Koa.DefaultState, ContextT = Koa.DefaultContext> {
    * @param event if omitted will remove all listeners
    * @param handler if omitted will remove all from the event
    */
-  off(event?: string, handler?: EventHandler): ThisType<ContextT> {
+  off(event?: string, handler?: EventHandler<ContextT>): ThisType<ContextT> {
     if (!event) {
       this.listeners = new Map();
       this.updateConnections();
@@ -345,22 +349,22 @@ export class IO<StateT = Koa.DefaultState, ContextT = Koa.DefaultContext> {
     return this.socket.to(room);
   }
 
-  private socketOnFactory(socket: Socket): (event: string, handler: EventHandler) => Socket {
+  private socketOnFactory(
+    socket: Socket,
+  ): (event: string, handler: EventHandler<ContextT>) => Socket {
     return (event, handler) =>
       socket.on(event, (data, cb) => {
-        const packet = {
+        const packet = ({
           event,
           data,
           socket,
           acknowledge: cb,
-        };
+        } as unknown) as BaseEventHandlerContext & ContextT;
 
         const handleEvent = () => handler(packet, data);
 
         const { composed } = this;
-        const handleMiddlewareChain = composed
-          ? () => composed((packet as unknown) as EnhancedKoaContext<StateT, ContextT>, handleEvent)
-          : handleEvent;
+        const handleMiddlewareChain = composed ? () => composed(packet, handleEvent) : handleEvent;
 
         handleMiddlewareChain();
       });
@@ -368,7 +372,7 @@ export class IO<StateT = Koa.DefaultState, ContextT = Koa.DefaultContext> {
 
   private socketUpdateFactory(
     socket: Socket,
-  ): (listeners: Map<string, Array<EventHandler>>) => void {
+  ): (listeners: Map<string, Array<EventHandler<ContextT>>>) => void {
     return (listeners) => {
       const on = this.socketOnFactory(socket);
 
@@ -394,7 +398,7 @@ export class IO<StateT = Koa.DefaultState, ContextT = Koa.DefaultContext> {
    * @private
    */
   private onConnection(sock: Socket): void {
-    const enhancedSocket = sock as EnhancedSocket;
+    const enhancedSocket = sock as EnhancedSocket<ContextT>;
 
     enhancedSocket.update = this.socketUpdateFactory(sock);
 
@@ -412,9 +416,7 @@ export class IO<StateT = Koa.DefaultState, ContextT = Koa.DefaultContext> {
           event: 'connection',
           data: sock,
           socket: sock,
-        } as {
-          socket: Socket;
-        },
+        } as BaseEventHandlerContext & ContextT,
         sock.id,
       );
     }

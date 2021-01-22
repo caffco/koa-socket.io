@@ -24,14 +24,21 @@ const deferredFactory = () => {
   return deferred;
 };
 
-const testApplicationFactory = () => {
-  const app = new Koa();
-  const socket = new IO();
+const testApplicationFactory = <
+  ContextT extends Record<string, unknown> = Koa.DefaultContext
+>() => {
+  const app = new Koa<Koa.DefaultState, ContextT>();
+  const socket = new IO<Koa.DefaultState, ContextT>();
   socket.attach(app);
   const server = app.listen();
   const address = server.address() as AddressInfo;
 
-  return { app: app as EnhancedKoa, server, address, socket };
+  return {
+    app: (app as unknown) as EnhancedKoa<Koa.DefaultState, ContextT>,
+    server,
+    address,
+    socket,
+  };
 };
 
 const connectedClientFactory = (port: number) =>
@@ -39,9 +46,11 @@ const connectedClientFactory = (port: number) =>
     transports: ['websocket'],
   });
 
-const testEnvironmentFactory = () => {
+const testEnvironmentFactory = <
+  ContextT extends Record<string, unknown> = Koa.DefaultContext
+>() => {
   const deferred = deferredFactory();
-  const { app, server, address, socket } = testApplicationFactory();
+  const { app, server, address, socket } = testApplicationFactory<ContextT>();
 
   const client = connectedClientFactory(address.port);
 
@@ -118,17 +127,17 @@ describe('IO', () => {
       const socket = new IO();
       socket.attach(app);
 
-      expect((app as EnhancedKoa).io).toEqual(expect.any(IO));
-      expect((app as EnhancedKoa).server).toBeTruthy();
+      expect(((app as unknown) as EnhancedKoa).io).toEqual(expect.any(IO));
+      expect(((app as unknown) as EnhancedKoa).server).toBeTruthy();
 
-      (app as EnhancedKoa).server.close();
+      ((app as unknown) as EnhancedKoa).server.close();
     });
 
     it('should not alter a koa app that already has ._io unless called with a namespace', () => {
       const app = new Koa();
       const socket = new IO();
 
-      (app as EnhancedKoa)._io = ({} as unknown) as SocketIOServer;
+      ((app as unknown) as EnhancedKoa)._io = ({} as unknown) as SocketIOServer;
 
       expect(() => socket.attach(app)).toThrowError(
         'Socket failed to initialise::Instance may already exist',
@@ -138,18 +147,18 @@ describe('IO', () => {
     it('should work with koa app that already has .server', () => {
       const app = new Koa();
       const socket = new IO();
-      (app as EnhancedKoa).server = createServer();
+      ((app as unknown) as EnhancedKoa).server = createServer();
       socket.attach(app);
 
-      expect((app as EnhancedKoa).io).toEqual(expect.any(IO));
+      expect(((app as unknown) as EnhancedKoa).io).toEqual(expect.any(IO));
 
-      (app as EnhancedKoa).server.close();
+      ((app as unknown) as EnhancedKoa).server.close();
     });
 
     it("shouldn't work if app.server exists but it's not an http server", () => {
       const app = new Koa();
       const socket = new IO();
-      (app as EnhancedKoa).server = ({} as unknown) as HTTPServer;
+      ((app as unknown) as EnhancedKoa).server = ({} as unknown) as HTTPServer;
 
       expect(() => socket.attach(app)).toThrowError(
         "app.server already exists but it's not an http server",
@@ -173,7 +182,7 @@ describe('IO', () => {
 
       chat.attach(app);
 
-      expect((app as EnhancedKoa)._io).toEqual(expect.any(SocketIOServer));
+      expect(((app as unknown) as EnhancedKoa)._io).toEqual(expect.any(SocketIOServer));
       expect(((app as unknown) as { chat: unknown }).chat).toEqual(chat);
     });
 
@@ -183,7 +192,7 @@ describe('IO', () => {
 
       const server = createServer(app.callback());
       const io = new SocketIOServer(server);
-      (app as EnhancedKoa)._io = io;
+      ((app as unknown) as EnhancedKoa)._io = io;
 
       chat.attach(app);
     });
@@ -204,7 +213,7 @@ describe('IO', () => {
 
       chat.attach(app);
 
-      const server = (app as EnhancedKoa).server?.listen();
+      const server = ((app as unknown) as EnhancedKoa).server?.listen();
       const address = server.address() as AddressInfo;
       const client = SocketIOClient(`ws://0.0.0.0:${address.port}/chat`, {
         transports: ['websocket'],
@@ -239,7 +248,7 @@ describe('IO', () => {
       socket.attach(app);
 
       const spy = jest.fn();
-      (app as EnhancedKoa).server.listen = spy;
+      ((app as unknown) as EnhancedKoa).server.listen = spy;
 
       const server = app.listen(() => {
         server.close();
