@@ -1,5 +1,11 @@
 ## 3.0.0
 
+## 3.1.0
+
+### Minor Changes
+
+- Export EnhancedKoa class and EnhancedKoaInstance type
+
 ## 3.0.2
 
 ### Patch Changes
