@@ -249,7 +249,7 @@ export class IO<
    * Pushes a middleware on to the stack
    * @param fn the middleware function to execute
    */
-  use(fn: compose.Middleware<EnhancedKoaContext<StateT, ContextT>>): ThisType<ContextT> {
+  use(fn: compose.Middleware<EnhancedKoaContext<StateT, ContextT>>): this {
     this.middleware.push(fn);
     this.composed = compose(this.middleware);
 
@@ -264,15 +264,9 @@ export class IO<
    * @param handler the callback to execute
    * @return this
    */
-  on(
-    event: 'connect' | 'connection',
-    handler: (socket: Socket) => Promise<void>,
-  ): ThisType<ContextT>;
-  on(event: string, handler: EventHandler<ContextT>): ThisType<ContextT>;
-  on(
-    event: string,
-    handler: EventHandler<ContextT> | ((socket: Socket) => Promise<void>),
-  ): ThisType<ContextT> {
+  on(event: 'connect' | 'connection', handler: (socket: Socket) => Promise<void>): this;
+  on(event: string, handler: EventHandler<ContextT>): this;
+  on(event: string, handler: EventHandler<ContextT> | ((socket: Socket) => Promise<void>)): this {
     if (['connect', 'connection'].includes(event)) {
       if (!this.socket) {
         throw new Error(
@@ -305,7 +299,7 @@ export class IO<
    * @param event if omitted will remove all listeners
    * @param handler if omitted will remove all from the event
    */
-  off(event?: string, handler?: EventHandler<ContextT>): ThisType<ContextT> {
+  off(event?: string, handler?: EventHandler<ContextT>): this {
     if (!event) {
       this.listeners = new Map();
       this.updateConnections();
