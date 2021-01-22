@@ -1,5 +1,15 @@
 ## 3.0.0
 
+## 3.2.0
+
+### Minor Changes
+
+- Return Socket.io server / namespace on attach
+
+### Patch Changes
+
+- Upgrade socket.io to v3.1.0
+
 ## 3.1.4
 
 ### Patch Changes
