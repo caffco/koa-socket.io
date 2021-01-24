@@ -23,11 +23,9 @@ export interface Options {
   ioOptions: Partial<ServerOptions>;
 }
 
-export type EnhancedKoaContext<StateT, BaseKoaContext> = Koa.ParameterizedContext<
+export type EnhancedKoaContext<StateT, CustomT> = Koa.ParameterizedContext<
   StateT,
-  BaseKoaContext & {
-    socket: Socket;
-  }
+  BaseEventHandlerContext & CustomT
 >;
 
 export class EnhancedKoa<
