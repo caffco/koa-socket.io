@@ -1,5 +1,11 @@
 ## 3.0.0
 
+## 3.2.1
+
+### Patch Changes
+
+- Fix typeEnhancedKoaContext so it includes event property
+
 ## 3.2.0
 
 ### Minor Changes
