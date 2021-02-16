@@ -1,5 +1,13 @@
 ## 3.0.0
 
+## 3.2.2
+
+### Patch Changes
+
+- Use `@caff/socket.io` instead of `socket.io`.
+
+  The only difference in `@caff/socket.io` is that all `@types` dependencies are moved to devDependencies so there are fewer dependencies installed in production with no effect in runtime.
+
 ## 3.2.1
 
 ### Patch Changes
