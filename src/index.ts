@@ -1,7 +1,7 @@
 import { createServer as createHttpsServer } from 'https';
 import { createServer as createHttpServer } from 'http';
 
-import { Server as SocketIOServer, Socket, Namespace, ServerOptions } from 'socket.io';
+import { Server as SocketIOServer, Socket, Namespace, ServerOptions } from '@caff/socket.io';
 import Koa from 'koa';
 import compose from 'koa-compose';
 

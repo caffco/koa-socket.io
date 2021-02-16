@@ -3,8 +3,8 @@ import 'jest';
 import { createServer, Server as HTTPServer } from 'http';
 import { AddressInfo } from 'net';
 
+import { Server as SocketIOServer } from '@caff/socket.io';
 import Koa from 'koa';
-import { Server as SocketIOServer } from 'socket.io';
 import SocketIOClient from 'socket.io-client';
 
 import { IO, EnhancedKoa } from '.';
