@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import 'jest';
 
 import { createServer, Server as HTTPServer } from 'http';
@@ -130,7 +131,7 @@ describe('IO', () => {
       expect(((app as unknown) as EnhancedKoa).io).toEqual(expect.any(IO));
       expect(((app as unknown) as EnhancedKoa).server).toBeTruthy();
 
-      ((app as unknown) as EnhancedKoa).server.close();
+      ((app as unknown) as EnhancedKoa).server!.close();
     });
 
     it('should not alter a koa app that already has ._io unless called with a namespace', () => {
@@ -152,7 +153,7 @@ describe('IO', () => {
 
       expect(((app as unknown) as EnhancedKoa).io).toEqual(expect.any(IO));
 
-      ((app as unknown) as EnhancedKoa).server.close();
+      ((app as unknown) as EnhancedKoa).server!.close();
     });
 
     it("shouldn't work if app.server exists but it's not an http server", () => {
@@ -213,7 +214,7 @@ describe('IO', () => {
 
       expect(chat.attach(app)).toHaveProperty('constructor.name', 'Namespace');
 
-      const server = ((app as unknown) as EnhancedKoa).server?.listen();
+      const server = ((app as unknown) as EnhancedKoa).server!.listen();
       const address = server.address() as AddressInfo;
       const client = SocketIOClient(`ws://0.0.0.0:${address.port}/chat`, {
         transports: ['websocket'],
@@ -248,7 +249,7 @@ describe('IO', () => {
       expect(socket.attach(app)).toEqual(expect.any(SocketIOServer));
 
       const spy = jest.fn();
-      ((app as unknown) as EnhancedKoa).server.listen = spy;
+      ((app as unknown) as EnhancedKoa).server!.listen = spy;
 
       const server = app.listen(() => {
         server.close();
@@ -319,7 +320,7 @@ describe('Connections', () => {
     const deferred = deferredFactory();
     const { address, app, socket } = testApplicationFactory();
 
-    app._io.on('connection', (s) => {
+    app._io!.on('connection', (s) => {
       expect(socket.connections.has(s.id)).toBe(true);
       s.disconnect();
       deferred.resolve();
@@ -334,7 +335,7 @@ describe('Connections', () => {
     const deferred = deferredFactory();
     const { address, app, server, socket } = testApplicationFactory();
 
-    app._io.on('connection', () => {
+    app._io!.on('connection', () => {
       expect(socket.connections.size).toBe(1);
     });
 
@@ -346,7 +347,7 @@ describe('Connections', () => {
 
     await asyncWait(20);
 
-    const s = socket.connections.get(client.id);
+    const s = socket.connections.get(client.id)!;
     s.disconnect();
     server.close();
 
