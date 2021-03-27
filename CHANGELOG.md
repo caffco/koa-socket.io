@@ -1,5 +1,11 @@
 ## 3.0.0
 
+## 3.2.3
+
+### Patch Changes
+
+- Update dependencies
+
 ## 3.2.2
 
 ### Patch Changes
