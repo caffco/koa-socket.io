@@ -277,10 +277,10 @@
   resolved "https://registry.yarnpkg.com/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
-"@caff/socket.io@^3.1.3":
-  version "3.1.3"
-  resolved "https://registry.yarnpkg.com/@caff/socket.io/-/socket.io-3.1.3.tgz#1905358fcfa54a997db296320cbf59b7fc0ea050"
-  integrity sha512-bIUY+7dffRpFEsFahBoheEPXGwBdXXCvFNaAnZrtpaBYDKnFk9mci0zJNBFeWB2a4ntUos/G1Aid/W6WPovcog==
+"@caff/socket.io@^3.1.4":
+  version "3.1.4"
+  resolved "https://registry.yarnpkg.com/@caff/socket.io/-/socket.io-3.1.4.tgz#e2cc0ed581a6c31af1b3642c4fc53ae4778aaa8a"
+  integrity sha512-oKw8cvwV/Y7Wxn53AwzuelWZLZR/GgMUVKu4lrvLrTPfk5+r+4FZFQLNH3HPHioFtkLXxE8XaxlcShB8PhqbWQ==
   dependencies:
     accepts "~1.3.4"
     base64id "~2.0.0"
