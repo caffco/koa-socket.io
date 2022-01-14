@@ -1,7 +1,13 @@
 import { createServer as createHttpsServer } from 'https';
 import { createServer as createHttpServer } from 'http';
 
-import { Server as SocketIOServer, Socket, Namespace, ServerOptions } from '@caff/socket.io';
+import {
+  BroadcastOperator,
+  Namespace,
+  Server as SocketIOServer,
+  ServerOptions,
+  Socket,
+} from 'socket.io';
 import Koa from 'koa';
 import compose from 'koa-compose';
 
@@ -335,7 +341,7 @@ export class IO<
    * @param room
    * @return socket
    */
-  to(room: string): SocketIOServer | Namespace {
+  to(room: string): BroadcastOperator<Record<string, (...params: unknown[]) => void>, unknown> {
     if (!this.socket) {
       throw new Error(
         'Room actions can only be performed once a socketIO instance has been attached',
