@@ -1,5 +1,11 @@
 ## 3.0.0
 
+## 4.0.0
+
+### Major Changes
+
+- 1ee6d9e: Move from @caff/socket.io to socket.io
+
 ## 3.2.5
 
 ### Patch Changes
