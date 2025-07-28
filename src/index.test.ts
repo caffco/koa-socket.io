@@ -1,14 +1,10 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { describe, it, expect, vi } from 'vitest';
-
-import { createServer, Server as HTTPServer } from 'http';
-import { AddressInfo } from 'net';
-
-import { Server as SocketIOServer } from 'socket.io';
+import { createServer, type Server as HttpServer } from 'node:http';
+import type { AddressInfo } from 'node:net';
 import Koa from 'koa';
-import SocketIOClient from 'socket.io-client';
-
-import { IO, EnhancedKoa } from '.';
+import { Server as SocketIoServer } from 'socket.io';
+import SocketIoClient from 'socket.io-client';
+import { describe, expect, it, vi } from 'vitest';
+import { type EnhancedKoa, IO } from './index.ts';
 
 const deferredFactory = () => {
   const deferred = {} as {
@@ -26,7 +22,7 @@ const deferredFactory = () => {
 };
 
 const testApplicationFactory = <
-  ContextT extends Record<string, unknown> = Koa.DefaultContext
+  ContextT extends Record<string, unknown> = Koa.DefaultContext,
 >() => {
   const app = new Koa<Koa.DefaultState, ContextT>();
   const socket = new IO<Koa.DefaultState, ContextT>();
@@ -35,7 +31,7 @@ const testApplicationFactory = <
   const address = server.address() as AddressInfo;
 
   return {
-    app: (app as unknown) as EnhancedKoa<Koa.DefaultState, ContextT>,
+    app: app as unknown as EnhancedKoa<Koa.DefaultState, ContextT>,
     server,
     address,
     socket,
@@ -43,12 +39,12 @@ const testApplicationFactory = <
 };
 
 const connectedClientFactory = (port: number) =>
-  SocketIOClient.connect(`ws://0.0.0.0:${port}`, {
+  SocketIoClient(`ws://0.0.0.0:${port}`, {
     transports: ['websocket'],
   });
 
 const testEnvironmentFactory = <
-  ContextT extends Record<string, unknown> = Koa.DefaultContext
+  ContextT extends Record<string, unknown> = Koa.DefaultContext,
 >() => {
   const deferred = deferredFactory();
   const { app, server, address, socket } = testApplicationFactory<ContextT>();
@@ -67,8 +63,9 @@ const testEnvironmentFactory = <
   return { client, server, app, socket, endTest, promise: deferred.promise };
 };
 
-const semaphoreFactory = (count: number) => {
+const semaphoreFactory = (initialCount: number) => {
   const deferred = deferredFactory();
+  let count = initialCount;
 
   const release = () => {
     count--;
@@ -116,7 +113,7 @@ describe('IO', () => {
     });
 
     it('should throw an error if options are invalid', () => {
-      expect(() => new IO((1 as unknown) as string)).toThrowError(
+      expect(() => new IO(1 as unknown as string)).toThrowError(
         'Incorrect argument passed to koaSocket constructor',
       );
     });
@@ -126,19 +123,19 @@ describe('IO', () => {
     it('should add socket.io to Koa app', () => {
       const app = new Koa();
       const socket = new IO();
-      expect(socket.attach(app)).toEqual(expect.any(SocketIOServer));
+      expect(socket.attach(app)).toEqual(expect.any(SocketIoServer));
 
-      expect(((app as unknown) as EnhancedKoa).io).toEqual(expect.any(IO));
-      expect(((app as unknown) as EnhancedKoa).server).toBeTruthy();
+      expect((app as unknown as EnhancedKoa).io).toEqual(expect.any(IO));
+      expect((app as unknown as EnhancedKoa).server).toBeTruthy();
 
-      ((app as unknown) as EnhancedKoa).server!.close();
+      (app as unknown as EnhancedKoa).server?.close();
     });
 
     it('should not alter a koa app that already has ._io unless called with a namespace', () => {
       const app = new Koa();
       const socket = new IO();
 
-      ((app as unknown) as EnhancedKoa)._io = ({} as unknown) as SocketIOServer;
+      (app as unknown as EnhancedKoa)._io = {} as unknown as SocketIoServer;
 
       expect(() => socket.attach(app)).toThrowError(
         'Socket failed to initialise::Instance may already exist',
@@ -148,18 +145,18 @@ describe('IO', () => {
     it('should work with koa app that already has .server', () => {
       const app = new Koa();
       const socket = new IO();
-      ((app as unknown) as EnhancedKoa).server = createServer();
-      expect(socket.attach(app)).toEqual(expect.any(SocketIOServer));
+      (app as unknown as EnhancedKoa).server = createServer();
+      expect(socket.attach(app)).toEqual(expect.any(SocketIoServer));
 
-      expect(((app as unknown) as EnhancedKoa).io).toEqual(expect.any(IO));
+      expect((app as unknown as EnhancedKoa).io).toEqual(expect.any(IO));
 
-      ((app as unknown) as EnhancedKoa).server!.close();
+      (app as unknown as EnhancedKoa).server?.close();
     });
 
     it("shouldn't work if app.server exists but it's not an http server", () => {
       const app = new Koa();
       const socket = new IO();
-      ((app as unknown) as EnhancedKoa).server = ({} as unknown) as HTTPServer;
+      (app as unknown as EnhancedKoa).server = {} as unknown as HttpServer;
 
       expect(() => socket.attach(app)).toThrowError(
         "app.server already exists but it's not an http server",
@@ -171,10 +168,10 @@ describe('IO', () => {
       const socket = new IO();
       const chat = new IO('chat');
 
-      expect(socket.attach(app)).toEqual(expect.any(SocketIOServer));
+      expect(socket.attach(app)).toEqual(expect.any(SocketIoServer));
       expect(chat.attach(app).constructor.name).toBe('Namespace');
 
-      expect(((app as unknown) as { chat: unknown }).chat).toEqual(chat);
+      expect((app as unknown as { chat: unknown }).chat).toEqual(chat);
     });
 
     it("should allow attaching a namespace to a 'clean' koa app", () => {
@@ -183,8 +180,8 @@ describe('IO', () => {
 
       expect(chat.attach(app).constructor.name).toBe('Namespace');
 
-      expect(((app as unknown) as EnhancedKoa)._io).toEqual(expect.any(SocketIOServer));
-      expect(((app as unknown) as { chat: unknown }).chat).toEqual(chat);
+      expect((app as unknown as EnhancedKoa)._io).toEqual(expect.any(SocketIoServer));
+      expect((app as unknown as { chat: unknown }).chat).toEqual(chat);
     });
 
     it('should allow manually creating the socketIO instance and attaching namespaces without a default', () => {
@@ -192,8 +189,8 @@ describe('IO', () => {
       const chat = new IO('chat');
 
       const server = createServer(app.callback());
-      const io = new SocketIOServer(server);
-      ((app as unknown) as EnhancedKoa)._io = io;
+      const io = new SocketIoServer(server);
+      (app as unknown as EnhancedKoa)._io = io;
 
       expect(chat.attach(app).constructor.name).toBe('Namespace');
     });
@@ -204,7 +201,7 @@ describe('IO', () => {
 
       expect(chat.attach(app).constructor.name).toBe('Namespace');
 
-      expect(((app as unknown) as { chat: unknown }).chat).toEqual(chat);
+      expect((app as unknown as { chat: unknown }).chat).toEqual(chat);
     });
 
     it('should allow hiding namespaces from the app object', async () => {
@@ -214,9 +211,11 @@ describe('IO', () => {
 
       expect(chat.attach(app).constructor.name).toBe('Namespace');
 
-      const server = ((app as unknown) as EnhancedKoa).server!.listen();
+      const appServer = (app as unknown as EnhancedKoa).server;
+      expect(appServer).toBeDefined();
+      const server = (appServer as NonNullable<typeof appServer>).listen();
       const address = server.address() as AddressInfo;
-      const client = SocketIOClient(`ws://0.0.0.0:${address.port}/chat`, {
+      const client = SocketIoClient(`ws://0.0.0.0:${address.port}/chat`, {
         transports: ['websocket'],
       });
 
@@ -246,10 +245,12 @@ describe('IO', () => {
       const app = new Koa();
       const socket = new IO();
 
-      expect(socket.attach(app)).toEqual(expect.any(SocketIOServer));
+      expect(socket.attach(app)).toEqual(expect.any(SocketIoServer));
 
       const spy = vi.fn();
-      ((app as unknown) as EnhancedKoa).server!.listen = spy;
+      const appServer = (app as unknown as EnhancedKoa).server;
+      expect(appServer).toBeDefined();
+      (appServer as NonNullable<typeof appServer>).listen = spy;
 
       const server = app.listen(() => {
         server.close();
@@ -320,7 +321,7 @@ describe('Connections', () => {
     const deferred = deferredFactory();
     const { address, app, socket } = testApplicationFactory();
 
-    app._io!.on('connection', (s) => {
+    app._io?.on('connection', (s) => {
       expect(socket.connections.has(s.id)).toBe(true);
       s.disconnect();
       deferred.resolve();
@@ -335,7 +336,7 @@ describe('Connections', () => {
     const deferred = deferredFactory();
     const { address, app, server, socket } = testApplicationFactory();
 
-    app._io!.on('connection', () => {
+    app._io?.on('connection', () => {
       expect(socket.connections.size).toBe(1);
     });
 
@@ -347,8 +348,10 @@ describe('Connections', () => {
 
     await asyncWait(20);
 
-    const s = socket.connections.get(client.id)!;
-    s.disconnect();
+    expect(client.id).toBeDefined();
+    const s = socket.connections.get(client.id as string);
+    expect(s).toBeDefined();
+    (s as NonNullable<typeof s>).disconnect();
     server.close();
 
     await deferred.promise;
@@ -551,7 +554,7 @@ describe('Handlers', () => {
 
     const spy = vi.fn();
 
-    socket.use(async (ctx, next) => {
+    socket.use(async (_ctx, next) => {
       spy();
       await next();
     });
@@ -576,7 +579,7 @@ describe('Handlers', () => {
     });
 
     socket.on('req', async (ctx) => {
-      expect(((ctx as unknown) as { foo: boolean }).foo).toBe(true);
+      expect((ctx as unknown as { foo: boolean }).foo).toBe(true);
       endTest();
     });
 
@@ -599,7 +602,7 @@ describe('Handlers', () => {
     });
 
     socket.on('req', async (ctx) => {
-      expect(((ctx as unknown) as { counter: number }).counter).toBe(1);
+      expect((ctx as unknown as { counter: number }).counter).toBe(1);
       endTest();
     });
 
@@ -640,10 +643,10 @@ describe('Stack', () => {
     const { client, socket, promise, endTest } = testEnvironmentFactory();
 
     socket.on('req1', async (ctx) => {
-      ctx.socket.emit('res1', ((ctx as unknown) as { foo: string }).foo);
+      ctx.socket.emit('res1', (ctx as unknown as { foo: string }).foo);
     });
     socket.on('req2', async (ctx) => {
-      ctx.socket.emit('res2', ((ctx as unknown) as { foo: string }).foo);
+      ctx.socket.emit('res2', (ctx as unknown as { foo: string }).foo);
     });
 
     client.on('connect', async () => {

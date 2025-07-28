@@ -1,15 +1,14 @@
-import { createServer as createHttpsServer } from 'https';
-import { createServer as createHttpServer } from 'http';
-
-import {
-  BroadcastOperator,
-  Namespace,
-  Server as SocketIOServer,
-  ServerOptions,
-  Socket,
-} from 'socket.io';
+import { createServer as createHttpServer } from 'node:http';
+import { createServer as createHttpsServer } from 'node:https';
 import Koa from 'koa';
 import compose from 'koa-compose';
+import {
+  type BroadcastOperator,
+  type Namespace,
+  type ServerOptions,
+  type Socket,
+  Server as SocketIoServer,
+} from 'socket.io';
 
 export interface Options {
   /**
@@ -36,16 +35,16 @@ export type EnhancedKoaContext<StateT, CustomT> = Koa.ParameterizedContext<
 
 export class EnhancedKoa<
   StateT extends Record<string, unknown> = Koa.DefaultContext,
-  ContextT extends Record<string, unknown> = Koa.DefaultContext
+  ContextT extends Record<string, unknown> = Koa.DefaultContext,
 > extends Koa<StateT, EnhancedKoaContext<StateT, ContextT>> {
   server?: ReturnType<typeof createHttpServer> | ReturnType<typeof createHttpServer>;
-  _io?: SocketIOServer;
+  _io?: SocketIoServer;
   io?: IO<StateT, ContextT>;
 }
 
 export type EnhancedKoaInstance<
   StateT extends Record<string, unknown>,
-  ContextT extends Record<string, unknown>
+  ContextT extends Record<string, unknown>,
 > = EnhancedKoa<StateT, ContextT> & Record<string, IO<StateT, ContextT> | undefined>;
 
 export interface BaseEventHandlerContext {
@@ -57,7 +56,7 @@ export interface BaseEventHandlerContext {
 
 export type EventHandler<Context extends Record<string, unknown>> = (
   ctx: BaseEventHandlerContext & Context,
-  ...rest: Array<unknown>
+  ...rest: unknown[]
 ) => Promise<unknown>;
 
 export interface EnhancedSocket<ContextT extends Record<string, unknown>> extends Socket {
@@ -66,22 +65,23 @@ export interface EnhancedSocket<ContextT extends Record<string, unknown>> extend
    * @param listeners map of events and callbacks
    * @param middleware > the composed middleware
    */
-  update: (listeners: Map<string, Array<EventHandler<ContextT>>>) => void;
+  update: (listeners: Map<string, EventHandler<ContextT>[]>) => void;
 }
 
 /**
  * Main IO class that handles the socket.io connections
  * @class
  */
+// biome-ignore lint/style/useNamingConvention: public API
 export class IO<
   StateT extends Record<string, unknown> = Koa.DefaultState,
-  ContextT extends Record<string, unknown> = Koa.DefaultContext
+  ContextT extends Record<string, unknown> = Koa.DefaultContext,
 > {
   /**
    * List of middlewares, these are composed into an execution chain and
    * evaluated with each event
    */
-  middleware: Array<compose.Middleware<EnhancedKoaContext<StateT, ContextT>>>;
+  middleware: compose.Middleware<EnhancedKoaContext<StateT, ContextT>>[];
   /**
    * Composed middleware stack
    */
@@ -91,7 +91,7 @@ export class IO<
    * event:callback
    * @type <Map>
    */
-  listeners: Map<string, Array<EventHandler<ContextT>>>;
+  listeners: Map<string, EventHandler<ContextT>[]>;
   /**
    * All active connections
    * id:Socket
@@ -102,9 +102,9 @@ export class IO<
    * Holds the socketIO connection
    * @type <Socket.IO>
    */
-  socket: SocketIOServer | Namespace | null;
+  socket: SocketIoServer | Namespace | null;
   opts: Options;
-  adapter?: SocketIOServer['adapter'];
+  adapter?: SocketIoServer['adapter'];
 
   /**
    * @constructs
@@ -147,7 +147,7 @@ export class IO<
     https: boolean,
     opts: Parameters<typeof createHttpsServer>[0],
   ) {
-    const enhancedApp = (app as unknown) as EnhancedKoa<StateT, ContextT>;
+    const enhancedApp = app as unknown as EnhancedKoa<StateT, ContextT>;
 
     if (enhancedApp.server) {
       if (enhancedApp.server.constructor.name !== 'Server') {
@@ -171,7 +171,7 @@ export class IO<
 
     // Patch `app.listen()` to call `app.server.listen()`
     enhancedApp.server = server;
-    enhancedApp.listen = (listen as unknown) as typeof app.listen;
+    enhancedApp.listen = listen as unknown as typeof app.listen;
   }
 
   private ensureDefaultNamespaceIsNotHidden() {
@@ -189,8 +189,8 @@ export class IO<
     app: Koa<StateT, ContextT>,
     https = false,
     opts: Parameters<typeof createHttpsServer>[0] = {},
-  ): SocketIOServer | Namespace {
-    const enhancedApp = (app as unknown) as EnhancedKoaInstance<StateT, ContextT>;
+  ): SocketIoServer | Namespace {
+    const enhancedApp = app as unknown as EnhancedKoaInstance<StateT, ContextT>;
 
     this.createServerIfNeeded(app, https, opts);
 
@@ -206,7 +206,7 @@ export class IO<
 
     this.ensureDefaultNamespaceIsNotHidden();
 
-    enhancedApp._io = new SocketIOServer(enhancedApp.server, this.opts.ioOptions);
+    enhancedApp._io = new SocketIoServer(enhancedApp.server, this.opts.ioOptions);
 
     if (this.opts.namespace) {
       return this.attachNamespace(enhancedApp, this.opts.namespace);
@@ -244,7 +244,7 @@ export class IO<
     }
 
     if (app[id]) {
-      throw new Error('Namespace ' + id + ' already attached to koa instance');
+      throw new Error(`Namespace ${id} already attached to koa instance`);
     }
 
     app[id] = this;
@@ -374,7 +374,7 @@ export class IO<
 
   private socketUpdateFactory(
     socket: Socket,
-  ): (listeners: Map<string, Array<EventHandler<ContextT>>>) => void {
+  ): (listeners: Map<string, EventHandler<ContextT>[]>) => void {
     return (listeners) => {
       const on = this.socketOnFactory(socket);
 

@@ -1,9 +1,8 @@
-import fs from 'fs';
-import path from 'path';
-
+import fs from 'node:fs';
+import path from 'node:path';
 import Koa from 'koa';
 
-import { IO } from '../src';
+import { IO } from '../src/index.ts';
 
 const app = new Koa();
 const io = new IO<
@@ -24,7 +23,7 @@ chat.attach(app);
 app.use(async (ctx, next) => {
   const start = new Date();
   await next();
-  const ms = new Date().getTime() - start.getTime();
+  const ms = Date.now() - start.getTime();
   console.log(`${ctx.method} ${ctx.url} - ${ms}ms`);
 });
 
@@ -39,11 +38,11 @@ app.use((ctx) => {
 /**
  * Socket middlewares
  */
-io.use(async (ctx, next) => {
+io.use(async (_ctx, next) => {
   console.log('Socket middleware');
-  const start = new Date().getTime();
+  const start = Date.now();
   await next();
-  const ms = new Date().getTime() - start;
+  const ms = Date.now() - start;
   console.log(`WS ${ms}ms`);
 });
 
@@ -83,7 +82,7 @@ io.on('ack', async (ctx, data) => {
   ctx.acknowledge('received');
 });
 
-io.on('numConnections', async (packet) => {
+io.on('numConnections', async (_packet) => {
   console.log(`Number of connections: ${io.connections.size}`);
 });
 
@@ -98,7 +97,7 @@ chat.on('message', async (ctx) => {
   console.log('chat message received', ctx.data);
 
   // Broadcasts to everybody, including this connection
-  ((app as unknown) as { chat: typeof io }).chat.broadcast('message', 'yo connections, lets chat');
+  (app as unknown as { chat: typeof io }).chat.broadcast('message', 'yo connections, lets chat');
 
   // Broadcasts to all other connections
   ctx.socket.broadcast.emit('message', 'ok connections:chat:broadcast');
@@ -109,9 +108,9 @@ chat.on('message', async (ctx) => {
 
 chat.use(async (ctx, next) => {
   ctx.teststring = 'chattest';
-  console.log(`ctx.socket =>`);
+  console.log('ctx.socket =>');
   console.dir(ctx.socket, { colors: true, depth: 2 });
-  console.log(`ctx.socket.nsp =>`, ctx.socket.nsp);
+  console.log('ctx.socket.nsp =>', ctx.socket.nsp);
   await next();
 });
 
