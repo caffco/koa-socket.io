@@ -33,7 +33,7 @@ jobs:
       - name: Run check format
         run: yarn format-check
       - name: Run tests
-        run: yarn test --detectOpenHandles --forceExit
+        run: yarn test
       - name: Upload coverage
         uses: caffco/code-climate-github-action@v0.0.1-alpha.5
         env:

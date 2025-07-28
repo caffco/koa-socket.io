@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import 'jest';
+import { describe, it, expect, vi } from 'vitest';
 
 import { createServer, Server as HTTPServer } from 'http';
 import { AddressInfo } from 'net';
@@ -172,7 +172,7 @@ describe('IO', () => {
       const chat = new IO('chat');
 
       expect(socket.attach(app)).toEqual(expect.any(SocketIOServer));
-      expect(chat.attach(app)).toHaveProperty('constructor.name', 'Namespace');
+      expect(chat.attach(app).constructor.name).toBe('Namespace');
 
       expect(((app as unknown) as { chat: unknown }).chat).toEqual(chat);
     });
@@ -181,7 +181,7 @@ describe('IO', () => {
       const app = new Koa();
       const chat = new IO('chat');
 
-      expect(chat.attach(app)).toHaveProperty('constructor.name', 'Namespace');
+      expect(chat.attach(app).constructor.name).toBe('Namespace');
 
       expect(((app as unknown) as EnhancedKoa)._io).toEqual(expect.any(SocketIOServer));
       expect(((app as unknown) as { chat: unknown }).chat).toEqual(chat);
@@ -195,14 +195,14 @@ describe('IO', () => {
       const io = new SocketIOServer(server);
       ((app as unknown) as EnhancedKoa)._io = io;
 
-      expect(chat.attach(app)).toHaveProperty('constructor.name', 'Namespace');
+      expect(chat.attach(app).constructor.name).toBe('Namespace');
     });
 
     it('should allow attaching a namespace should be done via an options object', () => {
       const app = new Koa();
       const chat = new IO({ namespace: 'chat' });
 
-      expect(chat.attach(app)).toHaveProperty('constructor.name', 'Namespace');
+      expect(chat.attach(app).constructor.name).toBe('Namespace');
 
       expect(((app as unknown) as { chat: unknown }).chat).toEqual(chat);
     });
@@ -212,7 +212,7 @@ describe('IO', () => {
       const app = new Koa();
       const chat = new IO({ namespace: 'chat', hidden: true });
 
-      expect(chat.attach(app)).toHaveProperty('constructor.name', 'Namespace');
+      expect(chat.attach(app).constructor.name).toBe('Namespace');
 
       const server = ((app as unknown) as EnhancedKoa).server!.listen();
       const address = server.address() as AddressInfo;
@@ -248,7 +248,7 @@ describe('IO', () => {
 
       expect(socket.attach(app)).toEqual(expect.any(SocketIOServer));
 
-      const spy = jest.fn();
+      const spy = vi.fn();
       ((app as unknown) as EnhancedKoa).server!.listen = spy;
 
       const server = app.listen(() => {
@@ -358,7 +358,7 @@ describe('Connections', () => {
     const deferred = deferredFactory();
     const { address, server, socket } = testApplicationFactory();
 
-    const spy = jest.fn();
+    const spy = vi.fn();
 
     socket.on('connection', async (ctx) => {
       spy();
@@ -379,7 +379,7 @@ describe('Handlers', () => {
   it('should associate event handlers with events', async () => {
     const { client, socket, endTest, promise } = testEnvironmentFactory();
 
-    const spy = jest.fn();
+    const spy = vi.fn();
 
     socket.on('req', async () => {
       spy();
@@ -396,8 +396,8 @@ describe('Handlers', () => {
   it('should allow listening to multiple events', async () => {
     const { client, socket, endTest, promise } = testEnvironmentFactory();
 
-    const spyA = jest.fn();
-    const spyB = jest.fn();
+    const spyA = vi.fn();
+    const spyB = vi.fn();
 
     socket.on('req', async () => {
       spyA();
@@ -419,8 +419,8 @@ describe('Handlers', () => {
   it('should allow connecting multipler handlers to the same event', async () => {
     const { client, socket, endTest, promise } = testEnvironmentFactory();
 
-    const spyA = jest.fn();
-    const spyB = jest.fn();
+    const spyA = vi.fn();
+    const spyB = vi.fn();
 
     socket.on('req', async () => {
       spyA();
@@ -444,7 +444,7 @@ describe('Handlers', () => {
   it('should allow removing a handler', async () => {
     const { client, socket, endTest, promise } = testEnvironmentFactory();
 
-    const spy = jest.fn();
+    const spy = vi.fn();
 
     socket.on('req', spy);
 
@@ -466,8 +466,8 @@ describe('Handlers', () => {
   it('should allow removing a handler from a multiple handler event', async () => {
     const { client, socket, endTest, promise } = testEnvironmentFactory();
 
-    const spyA = jest.fn();
-    const spyB = jest.fn();
+    const spyA = vi.fn();
+    const spyB = vi.fn();
 
     socket.on('req', spyA);
     socket.on('req', spyB);
@@ -493,8 +493,8 @@ describe('Handlers', () => {
   it('should allow removing all handlers from an event', async () => {
     const { client, socket, endTest, promise } = testEnvironmentFactory();
 
-    const spyA = jest.fn();
-    const spyB = jest.fn();
+    const spyA = vi.fn();
+    const spyB = vi.fn();
 
     socket.on('req', spyA);
     socket.on('req', spyB);
@@ -520,8 +520,8 @@ describe('Handlers', () => {
   it('should allow removing all handlers from a socket instance', async () => {
     const { client, socket, endTest, promise } = testEnvironmentFactory();
 
-    const spyA = jest.fn();
-    const spyB = jest.fn();
+    const spyA = vi.fn();
+    const spyB = vi.fn();
 
     socket.on('reqA', spyA);
     socket.on('reqB', spyB);
@@ -549,7 +549,7 @@ describe('Handlers', () => {
   it('should run middleware before listeners', async () => {
     const { client, socket, endTest, promise } = testEnvironmentFactory();
 
-    const spy = jest.fn();
+    const spy = vi.fn();
 
     socket.use(async (ctx, next) => {
       spy();
@@ -612,7 +612,7 @@ describe('Stack', () => {
   it('should allow adding listeners to connected clients during runtime', async () => {
     const { client, socket, endTest, promise } = testEnvironmentFactory();
 
-    const clientResponseSpy = jest.fn();
+    const clientResponseSpy = vi.fn();
 
     client.on('connect', async () => {
       client.on('response', clientResponseSpy);
