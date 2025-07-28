@@ -7,7 +7,7 @@ export default defineConfig({
     clearMocks: true,
     coverage: {
       enabled: true,
-      reporter: ['text', 'json', 'html'],
+      reporter: ['text', 'json', 'html', 'lcov'],
     },
     include: ['**/*.test.ts'],
     typecheck: {
