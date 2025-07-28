@@ -6,16 +6,14 @@ on:
       - main
 
 jobs:
-  build: # make sure build/ci work properly
+  build:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
       - uses: actions/checkout@v2
-      - run: |
-          yarn --frozen-lockfile
-      - run: |
-          yarn build
-  test: # make sure the action works on a clean machine without building
+      - run: yarn --frozen-lockfile
+      - run: yarn build
+  test:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -28,18 +26,12 @@ jobs:
           fetch-depth: 0
       - name: Install dependencies
         run: yarn --frozen-lockfile
-      - name: Run linter
+      - name: Run linter and formatter
         run: yarn lint
-      - name: Run check format
-        run: yarn format-check
       - name: Run tests
-        run: yarn test --detectOpenHandles --forceExit
-      - name: Upload coverage
-        uses: caffco/code-climate-github-action@v0.0.1-alpha.5
-        env:
-          CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
+        run: yarn test
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
         with:
-          repository_root_path: ${{github.workspace}}
-          collect_coverage: 'true'
-          coverage_file_patterns: |
-            coverage/lcov.info:lcov
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/lcov.info
